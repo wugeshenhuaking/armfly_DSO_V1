@@ -1,0 +1,40 @@
+V1.0    2015-01-05    Eric2013    首发
+V2.0    2015-03-27    Eric2013    1. 升级固件库到V1.5.0
+                                  2. 升级BSP板级支持包 
+                                  3. 升级fatfs到0.11
+                                  4. 升级STemWin到5.26，注意这里使用的是非优化版本
+                                     优化版本和非优化版本的区别看这个帖子：
+                                     (实际测试ST公司发布的两种库STemWin526_CM4_OS_Keil_ot.lib和STemWin526_CM4_OS_Keil.lib的区别)
+                                      http://bbs.armfly.com/read.php?tid=7442          
+                                  5. 更改为新的四点触摸校准算法，并重查编排触摸检测任务
+                                  6. 添加7寸800*480分辨率电容屏支持。
+V3.0    2015-12-18  Eric2013      1. 升级BSP板级支持包 
+								  2. 升级STemWin到5.28
+								  3. 添加4.3寸和5寸电容屏驱动支持。但是此例程当前仅支持800*480分辨率。
+								  4. 修改了bsp_adc.c文件里的TIM1初始化错误。
+								     TIM1和TIM8跟其它的定时器初始化稍有不同
+									 TIM_TimeBaseStructInit(&TIM_TimeBaseStructure); 	                                   //初始化定时器1的寄存器为复位值
+									TIM_TimeBaseStructure.TIM_Period =  168000000/g_SampleFreqTable[TimeBaseId][0] - 1;    //ARR自动重装载寄存器周期的值(定时时间）到设置频率后产生个更新或者中断(也是说定时时间到)
+									TIM_TimeBaseStructure.TIM_Prescaler = g_SampleFreqTable[TimeBaseId][1]-1;   		   //PSC时钟预分频数 例如：时钟频率=TIM1CLK/(时钟预分频+1)
+									TIM_TimeBaseStructure.TIM_ClockDivision = 0x0;    	            //CR1->CKD时间分割值
+									TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;     //CR1->CMS[1:0]和DIR定时器模式 向上计数
+									TIM_TimeBaseStructure.TIM_RepetitionCounter = 0x0000;		    /* TIM1 和 TIM8 必须设置 */	
+									TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
+
+									/**************ADC1的触发***********************************************/
+									TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1; 				   //CCMR2在向上计数时，一旦TIMx_CNT<TIMx_CCR1时通道1为有效电平，否则为无效电平
+									TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;      //CCER 输出使能          
+									TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period/3;//CCR3同计数器TIMx_CNT的比较，并在OC1端口上产生输出信号 
+									TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;    	   //CCER输出极性设置
+									TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;	   /* only for TIM1 and TIM8. 此处和正相引脚不同 */	
+									TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;		   /* only for TIM1 and TIM8. */		 
+									TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;	   /* only for TIM1 and TIM8. */
+									TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;	   /* only for TIM1 and TIM8. */
+								  5. 修改了bsp_dac.c文件里的DAC初始化错误。
+								  
+								    DAC_InitStructure.DAC_Trigger = DAC_Trigger_T6_TRGO;
+									DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_None;
+									DAC_InitStructure.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;/* 此参数也需要初始化 */
+									DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Disable;
+									DAC_Init(DAC_Channel_1, &DAC_InitStructure);
+            
