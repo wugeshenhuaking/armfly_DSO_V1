@@ -66,6 +66,8 @@ Purpose     : GUIDEMO initialization
 */
 void MainTask(void);
 void MainTask(void) {
+
+  // 先拿memedev 句柄
   WM_SetCreateFlags(WM_CF_MEMDEV);
   GUI_Init();
   GUIDEMO_Main();
